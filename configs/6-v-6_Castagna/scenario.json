@@ -1,0 +1,19 @@
+{
+    "formation": "2-2-2",
+    "n": 6,
+    "nteams": 2,
+    "players": [
+        "Pietro,64,F",
+        "Federico,30,F",
+        "Daniele,90,M",
+        "Gian,86,M",
+        "Paolo,88,D",
+        "Roberto,40,D",
+        "Marco,50,F",
+        "Ciccio,54,F",
+        "Christian,40,M",
+        "Jack,76,M",
+        "Alex,36,D",
+        "Leo,86,D"
+    ]
+}

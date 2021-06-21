@@ -3,15 +3,55 @@
     "n": 5,
     "nteams": 2,
     "players": [
-        "Pietro,64,F",
-        "Federico,30,F",
-        "Daniele,90,M",
-        "Gian,86,M",
-        "Paolo,88,D",
-        "Roberto,40,D",
-        "Christian,40,M",
-        "Jack,76,M",
-        "Alex,36,D",
-        "Leo,86,D"
+        {
+            "name": "Pietro",
+            "position": "F",
+            "rating": 64
+        },
+        {
+            "name": "Federico",
+            "position": "F",
+            "rating": 30
+        },
+        {
+            "name": "Daniele",
+            "position": "M",
+            "rating": 90
+        },
+        {
+            "name": "Gian",
+            "position": "M",
+            "rating": 86
+        },
+        {
+            "name": "Paolo",
+            "position": "D",
+            "rating": 88
+        },
+        {
+            "name": "Roberto",
+            "position": "D",
+            "rating": 40
+        },
+        {
+            "name": "Christian",
+            "position": "M",
+            "rating": 40
+        },
+        {
+            "name": "Jack",
+            "position": "M",
+            "rating": 76
+        },
+        {
+            "name": "Alex",
+            "position": "D",
+            "rating": 36
+        },
+        {
+            "name": "Leo",
+            "position": "D",
+            "rating": 86
+        }
     ]
 }

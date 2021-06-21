@@ -1,21 +1,16 @@
 import itertools as it
-import json
-import pathlib
-import pickle
+import typing as t
 
 from ortools.sat.python import cp_model
 
-from typing import Dict
-from typing import List
-from typing import Tuple
-
 # Custom imports
-from mister.constants import Filenames
-
+from mister.errors import NoSolutionError
 from mister.formation import Formation
 from mister.player import Player
 from mister.position import Position
+from mister.solution import Solution
 from mister.team import Team
+
 
 def _npositions():
     return len(Position)
@@ -25,8 +20,8 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
     """
     Intermediate solutions printer.
     """
-    def __init__(self, players_per_tid: Dict[Tuple[Player, int],
-                                             cp_model.IntVar]):
+    def __init__(self, players_per_tid: t.Dict[t.Tuple[Player, int],
+                                               cp_model.IntVar]):
         cp_model.CpSolverSolutionCallback.__init__(self)
 
         self.__nsolutions = 0
@@ -60,9 +55,9 @@ class Manager:
         raise NotImplementedError()
 
     @staticmethod
-    def make_teams(players: List[Player],
+    def make_teams(players: t.List[Player],
                    formation: Formation) \
-                  -> List[Team]:
+                  -> Solution:
         n = formation.nplayers
 
         nplayers = len(players)
@@ -176,7 +171,7 @@ class Manager:
                         model, solution_printer)
 
         if status != cp_model.OPTIMAL:
-            return []
+            raise NoSolutionError()
 
         print('\nOptimal epsilon: %i\n'
                 % solver.ObjectiveValue())
@@ -188,5 +183,8 @@ class Manager:
         print('    - Total solutions : %i'
               % solution_printer.nsolutions)
 
-        return Team.from_associations(
-            players_per_tid, solver)
+        return Solution.create(
+                solver.ObjectiveValue(),
+                avg_rating_per_team,
+                Team.from_associations(
+                        players_per_tid, solver))

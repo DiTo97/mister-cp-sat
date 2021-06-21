@@ -1,7 +1,10 @@
+import collections
+import typing as t
+
 from abc import ABC
 from abc import abstractmethod
 
-from typing import Type
+from collections import Iterable
 
 
 class Serializable(ABC):
@@ -19,5 +22,25 @@ class Serializable(ABC):
     @abstractmethod
     def deserialize(encoding: str,
                     delimiter: str = '-') \
-                   -> Type['Serializable']:
+                   -> t.Type['Serializable']:
+        raise NotImplementedError()
+
+class DictSerializable(Serializable):
+    def serialize(self) \
+                 -> t.Dict:
+        _D = self.__dict__
+
+        for k, v in _D.items():
+            if (isinstance(v, Serializable)):
+                _D[k] = v.serialize()
+            elif (isinstance(v, type([]))):
+                _D[k] = [o if not isinstance(o, Serializable)
+                           else o.serialize() for o in v]
+
+        return _D
+
+    @staticmethod
+    @abstractmethod
+    def deserialize(encoding: t.Dict) \
+                   -> t.Type['Serializable']:
         raise NotImplementedError()

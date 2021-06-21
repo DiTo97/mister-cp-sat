@@ -1,4 +1,66 @@
-[
-    "1-Federico,30,F-Roberto,40,D-Jack,76,M-Gian,86,M-Paolo,88,D",
-    "0-Alex,36,D-Christian,40,M-Pietro,64,F-Leo,86,D-Daniele,90,M"
-]
+{
+    "N": 2,
+    "balance": 0.994,
+    "teams": [
+        {
+            "id": 1,
+            "players": [
+                {
+                    "name": "Federico",
+                    "rating": 30,
+                    "position": "F"
+                },
+                {
+                    "name": "Roberto",
+                    "rating": 40,
+                    "position": "D"
+                },
+                {
+                    "name": "Jack",
+                    "rating": 76,
+                    "position": "M"
+                },
+                {
+                    "name": "Gian",
+                    "rating": 86,
+                    "position": "M"
+                },
+                {
+                    "name": "Paolo",
+                    "rating": 88,
+                    "position": "D"
+                }
+            ]
+        },
+        {
+            "id": 0,
+            "players": [
+                {
+                    "name": "Alex",
+                    "rating": 36,
+                    "position": "D"
+                },
+                {
+                    "name": "Christian",
+                    "rating": 40,
+                    "position": "M"
+                },
+                {
+                    "name": "Pietro",
+                    "rating": 64,
+                    "position": "F"
+                },
+                {
+                    "name": "Leo",
+                    "rating": 86,
+                    "position": "D"
+                },
+                {
+                    "name": "Daniele",
+                    "rating": 90,
+                    "position": "M"
+                }
+            ]
+        }
+    ]
+}

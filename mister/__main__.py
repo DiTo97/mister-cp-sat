@@ -2,24 +2,37 @@ import argparse
 import itertools as it
 import json
 import pathlib
-
-from typing import Dict
-from typing import List
-from typing import Tuple
+import typing as t
 
 # Custom imports
 from mister.constants import *
 from mister.errors import *
-
-from mister.manager import Manager
-
 from mister.formation import Formation
+from mister.manager import Manager
 from mister.player import Player
-from mister.team import Team
+from mister.types import JSON
 
-def main(_players: List[str], n: int,
-         _formation: str, nteams: int = 2) \
-        -> List[str]:
+    
+def fromjson(scenario_conf: JSON) \
+            -> JSON:
+    """
+    Generate N equally matched football teams from JSON scenario conf.
+
+    Parameters
+    ----------
+    scenario_conf: JSON
+        Encoded scenario conf as JSON
+    """
+    _players = scenario_conf['players']
+    n = int(scenario_conf['n'])
+    _formation = scenario_conf['formation']
+    nteams = int(scenario_conf['nteams'])
+
+    return main(_players, n,
+                _formation, nteams)
+
+def main(_players: t.List[JSON], n: int,
+         _formation: str, nteams: int = 2) -> JSON:
     """
     Generate N equally matched football teams given a list of players, the group size n of
     an n-a-side football pitch, with n being either 5, 6, or 7, the formation and the number of teams N.
@@ -34,8 +47,8 @@ def main(_players: List[str], n: int,
 
     Parameters
     ----------
-    _players : List[str]
-        Encoded players as string: "{name}-{rating}-{position}"
+    _players : JSON
+        Encoded players as JSON
 
     n : int
         Number of players per team
@@ -48,8 +61,8 @@ def main(_players: List[str], n: int,
 
     Returns
     -------
-    List[str]
-        Encoded teams as string.
+    JSON
+        Encoded teams as JSON.
     """
     # Deserialize the formation
     formation = Formation.deserialize(_formation)
@@ -61,17 +74,11 @@ def main(_players: List[str], n: int,
     _check_valid(players, n, formation, nteams)
 
     # Solve the SAT problem
-    teams = Manager.make_teams(
-        players, formation)
+    return Manager.make_teams(
+        players, formation)    \
+                  .serialize()
 
-    # Serialize the teams
-    if not teams:
-        return []
-
-    return [t.serialize() for t in teams]
-
-
-def _check_valid(players: List[Player], n: int,
+def _check_valid(players: t.List[Player], n: int,
                  formation: Formation, nteams: int):
     players.sort(key=lambda p: p.position)
 
@@ -106,16 +113,12 @@ def _check_valid(players: List[Player], n: int,
                 ngiven, formation, k, nteams)
 
 def _load_scenario_conf(dirpath: pathlib.Path) \
-                       -> Tuple[List[str], int, str, int]:
+                       -> JSON:
     # Load the scenario conf JSON
     with open(str(dirpath / Filenames['CONF'])) as jfh:
         scenario_conf = json.load(jfh)
 
-    return scenario_conf['players'],   \
-           scenario_conf['n'],         \
-           scenario_conf['formation'], \
-           scenario_conf['nteams']
-
+    return scenario_conf
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -132,24 +135,14 @@ if __name__ == '__main__':
     conf_dirpath = pathlib.Path(
         args.conf_dirpath).absolute()
 
-    # Load the scenario conf
+    solution_path = conf_dirpath \
+                        / Filenames['SOLU']
+
+    # Load the JSON scenario conf
     scenario_conf = _load_scenario_conf(conf_dirpath)
 
-    # Read all conf params
-    _players = scenario_conf[0]
-    n = scenario_conf[1]
-    _formation = scenario_conf[2]
-    nteams = scenario_conf[3]
-
     # Solve the SAT problem
-    _teams = main(_players, n,
-                  _formation, nteams)
-
-    if not _teams:
-        raise NoSolutionError()
-
-    # Store the solution JSON
-    solution_path = conf_dirpath / Filenames['SOLU']
-
+    # and store the solution JSON
     with open(str(solution_path), 'w') as jfh:
-        json.dump(_teams, jfh, indent=4)
+        json.dump(fromjson(scenario_conf),
+                  jfh, indent=4)

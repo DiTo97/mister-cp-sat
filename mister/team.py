@@ -1,13 +1,13 @@
-from mister.serializable import Serializable
-from typing import Dict
-from typing import List
+import typing as t
+
+from ortools.sat.python import cp_model
 
 # Custom imports
 from mister.player import Player
-from mister.serializable import Serializable
+from mister.serializable import DictSerializable
 
 
-class Team(Serializable):
+class Team(DictSerializable):
     def __init__(self, id: int):
         self.id = id
         self.players = []
@@ -20,22 +20,16 @@ class Team(Serializable):
         return sum([p.rating for p
                    in self.players])
 
-    def serialize(self,
-                  delimiter: str = '-') \
-                 -> str:
-        return delimiter.join([str(self.id)]
-            + [p.serialize() for p
-               in self.players])
-
     @staticmethod
-    def deserialize(econding: str,
-                    delimiter: str = '-') \
+    def deserialize(encoding: t.Dict) \
                    -> 'Team':
         raise NotImplementedError()
 
     @staticmethod
-    def from_associations(players_per_tid, cpsolver) \
-                         -> List['Team']:
+    def from_associations(players_per_tid: 
+                              t.Dict[t.Tuple[Player, int],
+                                     cp_model.IntVar],
+                          cpsolver) -> t.List['Team']:
         """
         Generate teams from players per team Id associations.
 
@@ -47,15 +41,15 @@ class Team(Serializable):
         cpsolver : Any
             CP solver that implements BooleanValue()
         """
-        _teams = {}
+        _T = {}
 
         for ptid, v in players_per_tid.items():
             if cpsolver.BooleanValue(v):
                 p, tid = ptid
 
-                if tid not in _teams:
-                    _teams[tid] = Team(tid)
+                if tid not in _T:
+                    _T[tid] = Team(tid)
 
-                _teams[tid].add(p)
+                _T[tid].add(p)
 
-        return list(_teams.values())
+        return list(_T.values())

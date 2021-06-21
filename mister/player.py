@@ -1,13 +1,13 @@
-from typing import Union
+import typing as t
 
 # Custom imports
 from mister.position import Position
-from mister.serializable import Serializable
+from mister.serializable import DictSerializable
 
 
-class Player(Serializable):
+class Player(DictSerializable):
     def __init__(self, name: str, rating: int,
-                 position: Union[str, Position]):
+                 position: t.Union[str, Position]):
         self.name = name
         self.rating = rating
 
@@ -16,16 +16,12 @@ class Player(Serializable):
 
         self.position = position
 
-    def serialize(self,
-                  delimiter: str = ',') \
-                 -> str:
-        return super().serialize(delimiter)
-
     @staticmethod
-    def deserialize(econding: str,
-                    delimiter: str = ',') \
+    def deserialize(encoding: t.Dict) \
                    -> 'Player':
-        name, rating, position = econding.split(delimiter)
+        name = encoding['name']
+        position = encoding['position']
+        rating = encoding['rating']
         
         return Player(name,
                       int(rating),

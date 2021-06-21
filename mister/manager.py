@@ -66,22 +66,7 @@ class Manager:
 
         teams_ids = range(nteams)
 
-        #
-        # Group all players by position
-        #
-
-        players.sort(key=lambda p: p.position)
-
-        players_per_position = {}
-
-        for k, g in it.groupby(players,
-                               lambda p: p.position):
-            players_per_position[k] = list(g)
-
-        #
-        # Extract metrics by rating
-        #
-
+        # Sort players by rating
         players.sort(key=lambda p: p.rating)
 
         players_top_n  = players[-nteams:]

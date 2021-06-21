@@ -5,14 +5,11 @@ from mister.serializable import DictSerializable
 from mister.team import Team
 
 class Solution(DictSerializable):
-    N: int
     balance: float
     teams: t.List[Team]
 
-    def __init__(self, N: int,
-                 balance: float,
+    def __init__(self, balance: float,
                  teams: t.List[Team]):
-        self.N = N
         self.balance = round(balance, 3)
         self.teams = teams
 
@@ -21,11 +18,10 @@ class Solution(DictSerializable):
                avgrating: int,
                teams: t.List[Team]) \
               -> 'Solution':
-        N = len(teams)
         balance = 1.*(avgrating - objvalue) \
                     / avgrating
 
-        return Solution(N, balance, teams)
+        return Solution(balance, teams)
 
     @staticmethod
     def deserialize(encoding: t.Dict) \

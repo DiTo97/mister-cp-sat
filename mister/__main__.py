@@ -98,9 +98,18 @@ def _check_valid(players: t.List[Player], n: int,
 
     # V3. Check whether there are enough players
     # for all the teams with that formation
-    for k, g in it.groupby(players,
-                           lambda p: p.position):
-        ngiven = len(list(g))
+    players_per_position = {
+        k: len(list(g)) for k, g
+                        in it.groupby(players,
+                              lambda p: p.position)
+                           }
+
+    for k in Position:
+        if k not in players_per_position.keys():
+            raise NotEnoughPlayersError(
+                0, formation, k, nteams)
+
+        ngiven = players_per_position[k]
         nvalid = nteams*formation \
                         .__dict__[k.name]
 

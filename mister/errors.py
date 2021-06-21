@@ -3,17 +3,23 @@ from mister.formation import Formation
 from mister.position import Position
 
 
-class DuplicatePlayersError(Exception):
-    def __init__(self, *args, **kwargs):
-        errmsg = 'All the players need a unique name as Id.'
+class _BaseException(Exception):
+    message: str
 
-        super().__init__(errmsg, *args, **kwargs)
+    def __repr__(self) -> str:
+        return self.message
 
 
-class InvalidFormationError(Exception):
+class DuplicatePlayersError(_BaseException):
+    def __init__(self):
+        self.message = 'All the players need a unique name as Id.'
+
+        super().__init__(self.message)
+
+
+class InvalidFormationError(_BaseException):
     def __init__(self, n: int,
-                 formation: Formation,
-                 *args, **kwargs):
+                 formation: Formation):
         """
         Parameters
         ----------
@@ -23,24 +29,23 @@ class InvalidFormationError(Exception):
         formation : Formation
             Formation of interest
         """
-        errmsg = 'Invalid formation {} cannot satisfy ' \
-                 'a {}-a-side football pitch.'          \
-                     .format(formation, n)
+        self.message = 'Invalid formation {} cannot satisfy ' \
+                       'a {}-a-side football pitch.'          \
+                           .format(formation, n)
 
-        super().__init__(errmsg, *args, **kwargs)
-
-
-class NoSolutionError(Exception):
-    def __init__(self, *args, **kwargs):
-        errmsg = 'No solution was found.'
-
-        super().__init__(errmsg, *args, **kwargs)
+        super().__init__(self.message)
 
 
-class NotEnoughPlayersError(Exception):
+class NoSolutionError(_BaseException):
+    def __init__(self):
+        self.message = 'No solution was found.'
+
+        super().__init__(self.message)
+
+
+class NotEnoughPlayersError(_BaseException):
     def __init__(self, n: int, formation: Formation,
-                 position: Position, nteams: int,
-                 *args, **kwargs):
+                 position: Position, nteams: int):
         """
         Parameters
         ----------
@@ -59,18 +64,17 @@ class NotEnoughPlayersError(Exception):
         nvalid = nteams*formation \
                         .__dict__[position.name]
 
-        errmsg = 'Given {} {}. Expected {} for ' \
-                 '{} teams with a {} formation.' \
-                     .format(n, position.fullform(plura=True),
-                             nvalid, nteams, formation)
+        self.message = 'Given {} {}. Expected {} for ' \
+                       '{} teams with a {} formation.' \
+                           .format(n, position.fullform(plura=True),
+                                   nvalid, nteams, formation)
 
-        super().__init__(errmsg, *args, **kwargs)
+        super().__init__(self.message)
 
 
-class TooManyPlayersError(Exception):
+class TooManyPlayersError(_BaseException):
     def __init__(self, n: int, formation: Formation,
-                 position: Position, nteams: int,
-                 *args, **kwargs):
+                 position: Position, nteams: int):
         """
         Parameters
         ----------
@@ -89,11 +93,11 @@ class TooManyPlayersError(Exception):
         nvalid = nteams*formation \
                         .__dict__[position.name]
 
-        errmsg = 'Given {} {}. Expected {} for '   \
-                 '{} teams with a {} formation. '  \
-                 'The SAT model does not account ' \
-                 'for reserves as of yet.'         \
-                     .format(n, position.fullform(plura=True),
-                             nvalid, nteams, formation)
+        self.message = 'Given {} {}. Expected {} for '   \
+                       '{} teams with a {} formation. '  \
+                       'The SAT model does not account ' \
+                       'for reserves as of yet.'         \
+                           .format(n, position.fullform(plura=True),
+                                   nvalid, nteams, formation)
 
-        super().__init__(errmsg, *args, **kwargs)
+        super().__init__(self.message)

@@ -1,6 +1,6 @@
 # Mister-CP-SAT
 
-CP-SAT solver for the [Mister]() app developed with Google's [OR-Tools](https://developers.google.com/optimization) package.
+CP-SAT solver for the [Mister](https://github.com/GILD-Studios/mister) app developed with Google's [OR-Tools](https://developers.google.com/optimization) package.
 
 ---
 

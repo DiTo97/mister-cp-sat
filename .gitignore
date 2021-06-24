@@ -3,3 +3,7 @@
 
 # Python virtualenv
 venv/
+
+# Python caches
+ __pycache__/
+ *.pyc

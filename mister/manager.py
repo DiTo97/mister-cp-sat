@@ -1,15 +1,23 @@
 import itertools as it
+import random
 import typing as t
 
 from ortools.sat.python import cp_model
 
 # Custom imports
+from mister.constants import Ratings
 from mister.errors import NoSolutionError
 from mister.formation import Formation
 from mister.player import Player
 from mister.position import Position
 from mister.solution import Solution
 from mister.team import Team
+
+
+MIN_epsilon   = 0
+MAX_epsilon   = Ratings['MAX']
+
+MIN_solutions = 3
 
 
 def _npositions():
@@ -26,39 +34,66 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
 
         self.__nsolutions = 0
         self.__players_per_tid = players_per_tid
+        self.__solutions = []
 
     def on_solution_callback(self):
-        print('\nSolution %i with:' % self.__nsolutions)
-        self.__nsolutions += 1
+        if self.ObjectiveValue() <= int(MAX_epsilon*0.32):
+            print('\nSolution %i with:' % self.__nsolutions)
 
-        print('    Objective value = %i\n'
-              % self.ObjectiveValue())
+            self.__nsolutions += 1
 
-        # Print each team's info
-        for t in Team.from_associations(
-                self.__players_per_tid, self):
-            print('    Team %i with rating = %i [\n' %
-                (t.id, t.rating), end='')
+            solution = {ptid: self.Value(v) for ptid, v
+                        in self.__players_per_tid.items()}
 
-            for p in t.players:
-                print('        (%s,%s,%s)\n' %
-                    (p.name, p.rating, p.position), end='')
+            self.__solutions.append(
+                (self.ObjectiveValue(),
+                solution))
 
-            print('    ]')
+            print('    Objective value = %i\n'
+                % self.ObjectiveValue())
+
+            # Print each team's info
+            for _t in Team.from_associations(
+                    self.__players_per_tid, self):
+                print('    Team %i with rating = %i [\n' %
+                    (_t.id, _t.rating), end='')
+
+                for p in _t.players:
+                    print('        (%s,%s,%s)\n' %
+                        (p.name, p.rating, p.position), end='')
+
+                print('    ]')
 
     @property
     def nsolutions(self):
         return self.__nsolutions
+
+    def get_solutions(self) -> t.List:
+        """
+        Get a range of good solutions up to some threshold on the objective value.
+        """
+        self.__solutions.sort(key=lambda s: s[0])
+        good_solutions = []
+
+        for k, g in it.groupby(self.__solutions,
+                               lambda s: s[0]):
+            if len(good_solutions) < MIN_solutions:
+                good_solutions += list(g)
+
+        return good_solutions
+
 
 class Manager:
     def __init__(self):
         raise NotImplementedError()
 
     @staticmethod
-    def make_teams(players: t.List[Player],
-                   formation: Formation) \
-                  -> Solution:
-        n = formation.nplayers
+    def make_teams(n: int,
+                   players: t.List[Player],
+                   formation: Formation,
+                   optimal: bool = False) -> Solution:
+        if formation is not None:
+            n = formation.nplayers
 
         nplayers = len(players)
         nteams = nplayers // n
@@ -101,7 +136,9 @@ class Manager:
         # Objective function to minimize:
         # epsilon := Rating deviation of each
         #            team from the average
-        e = model.NewIntVar(0, 100, 'epsilon')
+        e = model.NewIntVar(MIN_epsilon,
+                            MAX_epsilon,
+                            'epsilon')
 
         # C1. Each team must have the same size.
         for tid in teams_ids:
@@ -124,14 +161,15 @@ class Manager:
             model.Add(trating >= avg_rating_per_team - e)
             model.Add(trating <= avg_rating_per_team + e)
 
-        # C4. Each team must have a fixed number of players
-        # per position as stated in the formation.
-        for k in Position:
-            for tid in teams_ids:
-                model.Add(sum(players_per_tid[(p, tid)]
-                              for p in players
-                              if p.position == k)
-                          == formation.__dict__[k.name])
+        if formation is not None:
+            # C4. Each team must have a fixed number of players
+            # per position as stated in the formation.
+            for k in Position:
+                for tid in teams_ids:
+                    model.Add(sum(players_per_tid[(p, tid)]
+                                  for p in players
+                                  if p.position == k)
+                              == formation.__dict__[k.name])
 
         # C5. One team cannot have more than one
         # of the Nteams highest-rated players.
@@ -145,6 +183,55 @@ class Manager:
             model.Add(sum(players_per_tid[(p, tid)]
                           for p in players_flop_n) == 1)
 
+        if formation is None:
+            # C7. Each team must have at most +-1 players
+            # per position with respect to the other teams
+            for k in Position:
+                for i in range(len(teams_ids) - 1):
+                    for j in range(i + 1, len(teams_ids)):
+                        tid = teams_ids[i]
+                        oid = teams_ids[j]
+
+                        # For each pair extract the number of
+                        # player at position k
+                        nplayers_k_tid = sum(players_per_tid[(p, tid)]
+                                             for p in players
+                                             if p.position == k)
+
+                        nplayers_k_oid = sum(players_per_tid[(p, oid)]
+                                             for p in players
+                                             if p.position == k)
+
+                        # 1. Team i has the same players
+                        # as Team j at position k
+                        nplayers_eq = model.NewBoolVar('P: {} - N {} == N {}'
+                                                       .format(k, i, j))
+
+                        model.Add(nplayers_k_tid == nplayers_k_oid + 0) \
+                             .OnlyEnforceIf(nplayers_eq)
+
+                        # 2. Team i has one more player
+                        # at position k than Team j
+                        nplayers_p1 = model.NewBoolVar('P: {} - N {} == N {} + 1'
+                                                       .format(k, i, j))
+
+                        model.Add(nplayers_k_tid == nplayers_k_oid + 1) \
+                             .OnlyEnforceIf(nplayers_p1)
+
+                        # 3. Team i has one less player
+                        # at position k than Team j
+                        nplayers_m1 = model.NewBoolVar('P: {} - N {} == N {} - 1'
+                                                       .format(k, i, j))
+
+                        model.Add(nplayers_k_tid == nplayers_k_oid - 1) \
+                             .OnlyEnforceIf(nplayers_m1)
+
+                        # Ensure at least one is true
+                        model.AddBoolOr([nplayers_eq,
+                                         nplayers_p1,
+                                         nplayers_m1])
+
+
         # Minimize epsilon
         model.Minimize(e)
 
@@ -156,7 +243,11 @@ class Manager:
                         model, solution_printer)
 
         if status != cp_model.OPTIMAL:
-            raise NoSolutionError()
+            if status != cp_model.FEASIBLE:
+                raise NoSolutionError()
+
+            print('{} solutions were found, but all sub-optimal.'
+                  .format(solution_printer.nsolutions))
 
         print('\nOptimal epsilon: %i\n'
                 % solver.ObjectiveValue())
@@ -168,8 +259,24 @@ class Manager:
         print('    - Total solutions : %i'
               % solution_printer.nsolutions)
 
+        # Pick the optimal solution
+        if optimal:
+            return Solution.create(
+                    solver.ObjectiveValue(),
+                    avg_rating_per_team,
+                    Team.from_associations(
+                            players_per_tid, solver))
+
+        # Pick a random solution from the set of good enough solutions
+        # to better reflect the search space near convergence.
+        solutions = solution_printer.get_solutions()
+
+        if not solutions:
+            raise NoSolutionError()
+
+        epsilon, variables = random.choice(solutions)
+
         return Solution.create(
-                solver.ObjectiveValue(),
-                avg_rating_per_team,
+                epsilon, avg_rating_per_team,
                 Team.from_associations(
-                        players_per_tid, solver))
+                        variables, solver))

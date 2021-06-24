@@ -1,4 +1,5 @@
 # Custom imports
+from mister.constants import Ratings
 from mister.formation import Formation
 from mister.position import Position
 
@@ -36,9 +37,27 @@ class InvalidFormationError(_BaseException):
         super().__init__(self.message)
 
 
+class InvalidRatingError(_BaseException):
+    def __init__(self):
+        self.message = "Each player must have a rating between {} and {}" \
+                       .format(Ratings['MIN'], Ratings['MAX'])
+
+        super().__init__(self.message)
+
+
 class NoSolutionError(_BaseException):
     def __init__(self):
         self.message = 'No solution was found.'
+
+        super().__init__(self.message)
+
+
+class NotEnoughTotalPlayersError(_BaseException):
+    def __init__(self, nplayers: int, n: int, nteams: int):
+        self.message = 'Given {} players. Expected {} for ' \
+                       '{} teams of size {}.'               \
+                       .format(nplayers, n*nteams,
+                               nteams, n)
 
         super().__init__(self.message)
 

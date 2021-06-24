@@ -8,8 +8,11 @@ from mister.errors import *
 
 # Request keys for Mister API
 Mister_KEYS = [
-    'formation', 'n',
-    'nteams', 'players'
+    'n', 'nteams', 'players'
+]
+
+Mister_KEYS_opt = [
+    'formation', 'optimal'
 ]
 
 Methods = {
@@ -27,16 +30,22 @@ def make_teams():
     if not request.method \
             in Methods['ALLOWED']:
         return {
-            'error': 'Method not allowed'
+            'error': 'Request method not allowed'
                }, 405
 
     scenario_data = request.json
     scenario_keys = scenario_data.keys()
 
-    if not set(Mister_KEYS) \
-            == set(scenario_keys):
+    if not set(Mister_KEYS).issubset(
+           set(scenario_keys)):
         return {
             'error': 'Missing parameters'
+               }, 400
+
+    if not set(scenario_keys).issubset(
+           set(Mister_KEYS) | set(Mister_KEYS_opt)):
+        return {
+            'error': 'Unknown parameters'
                }, 400
 
     try:
@@ -44,14 +53,16 @@ def make_teams():
     except (DuplicatePlayersError,
             NoSolutionError,
             InvalidFormationError,
+            InvalidRatingError,
             NotEnoughPlayersError,
+            NotEnoughTotalPlayersError,
             TooManyPlayersError) as e:
         return {
             'error': str(e)
                }, 400
     except Exception:
         return {
-            'error': 'Unknown'
+            'error': 'Unable to connect to the API.'
                }, 500
 
 if __name__ == '__main__':

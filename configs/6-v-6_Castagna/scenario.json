@@ -2,6 +2,7 @@
     "formation": "2-2-2",
     "n": 6,
     "nteams": 2,
+    "optimal": "False",
     "players": [
         {
             "name": "Pietro",

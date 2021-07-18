@@ -77,8 +77,10 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
 
         for k, g in it.groupby(self.__solutions,
                                lambda s: s[0]):
-            if len(good_solutions) < MIN_solutions:
-                good_solutions += list(g)
+            if len(good_solutions) >= MIN_solutions:
+                break
+                
+            good_solutions += list(g)
 
         return good_solutions
 
